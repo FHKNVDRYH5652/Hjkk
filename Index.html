@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Predictor Arena</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;font-family:'Arial Black',Arial,sans-serif;color:#fff;min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;}
+
+/* ── OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+.overlay.hidden{display:none;}
+.popup-box{background:#111;border:2px solid #0f0;border-radius:18px;padding:0;max-width:340px;width:90%;text-align:center;overflow:hidden;}
+.popup-img-full{width:100%;display:block;max-height:320px;object-fit:cover;}
+.popup-inner{padding:20px 18px;}
+.popup-box p{font-size:13px;color:#ccc;margin-bottom:18px;line-height:1.6;}
+.btn-green{display:block;background:linear-gradient(135deg,#00ff88,#00cc55);color:#000;font-weight:900;font-size:15px;border:none;border-radius:10px;padding:13px 20px;cursor:pointer;width:100%;margin-bottom:10px;text-decoration:none;}
+.btn-red{display:block;background:linear-gradient(135deg,#ff3333,#cc0000);color:#fff;font-weight:900;font-size:14px;border:none;border-radius:10px;padding:11px 20px;cursor:pointer;width:100%;text-decoration:none;margin-top:8px;}
+.popup-box input{width:100%;padding:12px;border-radius:8px;border:1px solid #0f0;background:#000;color:#0f0;font-size:15px;text-align:center;margin-bottom:12px;outline:none;}
+.popup-title{font-size:20px;font-weight:900;color:#fff;margin-bottom:10px;letter-spacing:1px;}
+.error-msg{color:#f55;font-size:12px;margin-bottom:10px;display:none;}
+
+/* ── HEADER ── */
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 8px;position:relative;}
+.header-logo{position:absolute;left:50%;transform:translateX(-50%);pointer-events:none;}
+.header-logo img{height:50px;object-fit:contain;display:block;}
+.hbtn{width:42px;height:42px;background:#1a1a1a;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;z-index:2;flex-shrink:0;}
+.notif-dot{position:absolute;top:7px;right:7px;width:9px;height:9px;background:#f55;border-radius:50%;}
+.ham span{display:block;width:19px;height:2px;background:#fff;margin:4px 0;border-radius:2px;}
+
+/* ── TOP BAR ── */
+.top-bar{display:flex;align-items:stretch;margin:4px 12px 10px;gap:8px;}
+.tbi{flex:1;background:#0d0d0d;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid #222;min-height:52px;overflow:hidden;position:relative;}
+.tbi img{width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;}
+.tbi-label{font-size:8px;color:#555;position:absolute;top:7px;left:0;right:0;text-align:center;letter-spacing:1px;}
+.tbi-val{font-size:17px;font-weight:900;color:#00ff88;position:absolute;bottom:6px;left:0;right:0;text-align:center;}
+.live-time{font-size:15px;font-weight:900;color:#fff;letter-spacing:1px;}
+
+/* ── ROUND BAR ── */
+.round-bar{margin:0 12px 12px;border-radius:12px;overflow:hidden;position:relative;height:58px;border:1px solid #1a1a1a;}
+.round-bar img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;}
+.round-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:linear-gradient(90deg,rgba(0,0,0,.75),rgba(0,0,0,.4),rgba(0,0,0,.75));}
+.rl{font-size:10px;font-weight:700;letter-spacing:1px;}
+.rl-g{color:#0f0;} .rl-w{color:#ccc;}
+.rn{font-size:14px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;word-break:break-all;max-width:180px;}
+.rc{font-size:18px;font-weight:900;color:#f90;font-variant-numeric:tabular-nums;}
+
+/* ── FEATURED ── */
+.feat-card{margin:0 12px 12px;border-radius:16px;overflow:hidden;border:2px solid #0f0;position:relative;height:230px;transition:border-color .4s;}
+.feat-card img.fb{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;}
+.feat-ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.65) 0%,rgba(0,0,0,.05) 45%,rgba(0,0,0,.85) 100%);display:flex;flex-direction:column;justify-content:space-between;padding:12px 14px;}
+.feat-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.feat-nn{display:flex;align-items:center;gap:8px;}
+.nb{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;}
+.live-b{background:#0f0;color:#000;font-weight:900;font-size:12px;padding:5px 12px;border-radius:6px;}
+.wait-b{background:#f90;color:#000;font-weight:900;font-size:11px;padding:5px 10px;border-radius:6px;}
+.feat-name{font-size:18px;font-weight:900;color:#fff;letter-spacing:1px;}
+.feat-sub{font-size:10px;letter-spacing:2px;font-weight:700;color:#0f0;}
+.feat-bot{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;}
+.feat-stats{display:flex;gap:14px;flex-wrap:wrap;}
+.fsl{font-size:9px;color:#aaa;}
+.fsv{font-size:13px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;}
+
+/* ── BADGES ── */
+.nb-g{background:#0f0;color:#000;} .nb-r{background:#f33;color:#fff;}
+.nb-y{background:#f90;color:#000;} .nb-p{background:#a020f0;color:#fff;}
+.nb-c{background:#0ef;color:#000;} .nb-o{background:#ff6600;color:#fff;}
+.nb-pk{background:#ff3399;color:#fff;} .nb-b{background:#0055ff;color:#fff;}
+.nb-gd{background:#ffd700;color:#000;} .nb-t{background:#00ccaa;color:#000;}
+
+/* ── LIKE ── */
+.like-btn{width:38px;height:38px;background:rgba(0,0,0,.5);border:2px solid rgba(255,80,80,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:all .18s;flex-shrink:0;}
+.like-btn.liked{background:#f55;border-color:#f55;}
+.clb{width:30px;height:30px;background:rgba(0,0,0,.5);border:1.5px solid rgba(255,80,80,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all .18s;flex-shrink:0;}
+.clb.liked{background:#f55;border-color:#f55;}
+
+/* ── GRID CARDS ── */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 12px 10px;}
+.scard{border-radius:14px;overflow:hidden;position:relative;height:152px;border:1px solid #222;transition:border-color .3s;}
+.scard.live-active{border-color:#ff6600;box-shadow:0 0 14px rgba(255,102,0,.5);}
+.scard img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;}
+.cov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.7) 0%,rgba(0,0,0,.05) 42%,rgba(0,0,0,.8) 100%);display:flex;flex-direction:column;justify-content:space-between;padding:9px 9px 8px;}
+.ct{display:flex;align-items:center;gap:6px;}
+.cn{font-size:13px;font-weight:900;color:#fff;}
+.cs{font-size:8px;letter-spacing:1.5px;color:#0f0;font-weight:700;}
+.cb{display:flex;justify-content:space-between;align-items:flex-end;}
+.csl{font-size:9px;color:#aaa;}
+.csv{font-size:12px;font-weight:900;color:#0f0;font-variant-numeric:tabular-nums;}
+.wlr{display:flex;gap:4px;align-items:center;margin-top:2px;flex-wrap:wrap;}
+.wb{font-size:8px;font-weight:900;padding:1px 4px;border-radius:4px;}
+.ww{background:#0a2a0a;color:#0f0;border:1px solid #0f0;}
+.wl{background:#2a0a0a;color:#f55;border:1px solid #f55;}
+.wacc{font-size:8px;color:#f90;font-weight:700;}
+.pbox{margin-top:2px;font-size:12px;font-weight:900;min-height:15px;}
+
+/* ── FULL CARD ── */
+.fcard{margin:0 12px 12px;border-radius:14px;overflow:hidden;position:relative;height:120px;border:1px solid #222;transition:border-color .3s;}
+.fcard.live-active{border-color:#ff6600;box-shadow:0 0 14px rgba(255,102,0,.5);}
+.fcard img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;}
+.fcov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.7) 0%,rgba(0,0,0,.05) 42%,rgba(0,0,0,.8) 100%);display:flex;flex-direction:column;justify-content:space-between;padding:10px 14px;}
+.fcb{display:flex;justify-content:space-between;align-items:flex-end;}
+
+/* ── PREDICTION COLORS ── */
+.pbig{color:#0f0;text-shadow:0 0 12px #0f0;font-weight:900;}
+.psml{color:#f55;text-shadow:0 0 12px #f55;font-weight:900;}
+.pwait{color:#f90;font-weight:700;font-size:10px;}
+.pnone{color:#666;font-size:9px;font-style:italic;}
+
+/* ── BOTTOM ── */
+.bot{background:#0a0a0a;border-top:1px solid #1a1a1a;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;bottom:0;}
+.on-dot{width:8px;height:8px;background:#0f0;border-radius:50%;animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.on-lbl{font-size:11px;color:#777;}
+.on-cnt{font-size:17px;font-weight:900;color:#0f0;}
+.trust{font-size:10px;color:#f90;font-style:italic;text-align:center;flex:1;padding:0 6px;}
+.snb{width:27px;height:27px;border-radius:7px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* ── API STATUS ── */
+.api-status{position:fixed;top:0;left:0;right:0;text-align:center;font-size:10px;padding:2px;z-index:8888;transition:opacity 1s;}
+.api-ok{background:rgba(0,180,0,.8);color:#fff;}
+.api-err{background:rgba(200,0,0,.8);color:#fff;}
+
+/* ── SYNC STATUS BADGE ── */
+.sync-badge{position:fixed;bottom:55px;right:10px;font-size:9px;padding:3px 8px;border-radius:10px;z-index:8000;opacity:0.85;}
+.sync-ok{background:#003300;color:#0f0;border:1px solid #0f0;}
+.sync-wait{background:#331a00;color:#f90;border:1px solid #f90;}
+</style>
+</head>
+<body>
+
+<!-- API status bar -->
+<div id="apiBar" class="api-status" style="opacity:0;"></div>
+
+<!-- Firebase Sync Badge -->
+<div id="syncBadge" class="sync-badge sync-wait">⏳ Syncing...</div>
+
+<!-- INTRO POPUP -->
+<div class="overlay" id="introPopup">
+  <div class="popup-box" style="border-color:#0f0;">
+    <img src="101.png" alt="" class="popup-img-full" onerror="this.style.display='none'">
+    <div class="popup-inner">
+      <button class="btn-green" onclick="closeIntro()" style="margin-bottom:0;">▶ ENTER ARENA</button>
+    </div>
+  </div>
+</div>
+
+<!-- CH1 POPUP -->
+<div class="overlay hidden" id="ch1Pop">
+  <div class="popup-box" style="border-color:#f90;">
+    <div class="popup-inner">
+      <div class="popup-title">🔔 JOIN CHANNEL</div>
+      <p>Free predictions & signals milenge!<br>Abhi join karo.</p>
+      <a class="btn-green" href="https://t.me/+8GtO9R-G56k5OTE1" target="_blank" onclick="hidePopup('ch1Pop')">📢 JOIN NOW</a>
+    </div>
+  </div>
+</div>
+
+<!-- CH2 POPUP -->
+<div class="overlay hidden" id="ch2Pop">
+  <div class="popup-box" style="border-color:#f90;">
+    <div class="popup-inner">
+      <div class="popup-title">⚡ VIP CHANNEL</div>
+      <p>Premium predictions ke liye VIP channel join karo!</p>
+      <a class="btn-green" href="https://t.me/+yQ7eWcLEHwVmZDY1" target="_blank" onclick="hidePopup('ch2Pop')">🌟 JOIN VIP</a>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK POPUP -->
+<div class="overlay hidden" id="fbPop">
+  <div class="popup-box" style="border-color:#0af;">
+    <div class="popup-inner">
+      <div class="popup-title">💬 FEEDBACK</div>
+      <p>Apko website kaisa laga?</p>
+      <a class="btn-green" href="https://t.me/Predict456" target="_blank" onclick="hidePopup('fbPop')">📝 GIVE FEEDBACK</a>
+      <button class="btn-red" onclick="hidePopup('fbPop')">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- KEY POPUP -->
+<div class="overlay hidden" id="keyPop">
+  <div class="popup-box" style="border-color:#f55;">
+    <div class="popup-inner">
+      <div class="popup-title">🔑 KEY REQUIRED</div>
+      <p>30 min free trial khatam!<br>Key enter karo ya buy karo.</p>
+      <input type="text" id="keyInput" placeholder="Enter access key..." autocomplete="off">
+      <div class="error-msg" id="keyErr">❌ Wrong key!</div>
+      <button class="btn-green" onclick="checkKey()">✅ SUBMIT</button>
+      <a class="btn-red" href="https://t.me/Predict456" target="_blank">🛒 BUY KEY</a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none;">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hbtn"><div class="ham"><span></span><span></span><span></span></div></div>
+  <div class="header-logo">
+    <img src="102.png" alt="Predictor Arena"
+      onerror="this.outerHTML='<div style=&quot;font-size:19px;font-weight:900;letter-spacing:1px;white-space:nowrap&quot;><span style=&quot;color:#0f0&quot;>PREDICTOR</span> <span style=&quot;color:#f55&quot;>ARENA</span></div>'">
+  </div>
+  <div class="hbtn" style="position:relative;">
+    <span style="font-size:20px;">🔔</span>
+    <div class="notif-dot"></div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="tbi" style="flex-direction:column;gap:1px;padding:6px 4px;">
+    <img src="102.png" alt="" style="position:absolute;inset:0;border-radius:12px;opacity:0.35;" onerror="this.style.display='none'">
+    <div class="tbi-label">TOTAL PREDICTIONS</div>
+    <div class="tbi-val" id="totalPredCount">0</div>
+  </div>
+  <div class="tbi" style="cursor:pointer;padding:0;">
+    <img src="103.png" alt="Leaderboard" onerror="this.outerHTML='<span style=&quot;font-size:26px&quot;>🏆</span>'">
+  </div>
+  <div class="tbi">
+    <div class="live-time" id="liveClock">00:00:00</div>
+  </div>
+</div>
+
+<!-- ROUND BAR -->
+<div class="round-bar">
+  <img src="104.png" alt="" onerror="this.style.opacity='0'">
+  <div class="round-overlay">
+    <div>
+      <div class="rl rl-g">NEXT PERIOD</div>
+      <div class="rn" id="liveRound">Loading...</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="rl rl-w">ROUND ENDS IN</div>
+      <div class="rc" id="roundCD">--:--:--</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURED CARD -->
+<div class="feat-card" id="featCard" style="border-color:#0f0;">
+  <img src="105.png" alt="" class="fb" id="featImg"
+    onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#001500,#002800);display:block;'">
+  <div class="feat-ov">
+    <div class="feat-top">
+      <div class="feat-nn">
+        <div class="nb nb-g" id="featNB">03</div>
+        <div>
+          <div class="feat-name" id="featName">EREN</div>
+          <div class="feat-sub">PREDICTION</div>
+        </div>
+      </div>
+      <div class="live-b" id="featBadge">LIVE</div>
+    </div>
+    <div class="feat-bot">
+      <div class="feat-stats">
+        <div>
+          <div class="fsl">⟡ NEXT PERIOD</div>
+          <div class="fsv" id="featPeriod" style="font-size:10px;word-break:break-all;">---</div>
+        </div>
+        <div>
+          <div class="fsl">⏱ TIME LEFT</div>
+          <div class="fsv" style="color:#0f0;" id="featTime">--:--:--</div>
+        </div>
+        <div>
+          <div class="fsl">⟡ PREDICTION</div>
+          <div id="featPred" class="pwait" style="font-size:14px;min-height:18px;">---</div>
+        </div>
+      </div>
+      <div class="like-btn" id="featLike">🤍</div>
+    </div>
+  </div>
+</div>
+
+<!-- MIKEY + GOJO -->
+<div class="grid">
+  <div class="scard" id="card-mikey">
+    <img src="105.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#1a0000,#2a0000);display:block;'">
+    <div class="cov">
+      <div class="ct"><div class="snb nb-r">01</div><div><div class="cn">MIKEY</div><div class="cs">PREDICTION</div></div></div>
+      <div class="cb">
+        <div>
+          <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tMikey">--:--:--</div>
+          <div class="wlr"><span class="wb ww" id="wMikey">W:0</span><span class="wb wl" id="lMikey">L:0</span><span class="wacc" id="aMikey">0%</span></div>
+          <div class="pbox" id="pMikey"></div>
+        </div>
+        <div class="clb" id="lbMikey" onclick="doLike('mikey')">🤍</div>
+      </div>
+    </div>
+  </div>
+  <div class="scard" id="card-gojo">
+    <img src="106.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#00001a,#00002e);display:block;'">
+    <div class="cov">
+      <div class="ct"><div class="snb nb-y">02</div><div><div class="cn">GOJO</div><div class="cs">PREDICTION</div></div></div>
+      <div class="cb">
+        <div>
+          <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tGojo">--:--:--</div>
+          <div class="wlr"><span class="wb ww" id="wGojo">W:0</span><span class="wb wl" id="lGojo">L:0</span><span class="wacc" id="aGojo">0%</span></div>
+          <div class="pbox" id="pGojo"></div>
+        </div>
+        <div class="clb" id="lbGojo" onclick="doLike('gojo')">🤍</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EREN (03) FULL WIDTH -->
+<div class="fcard" id="card-eren" style="height:130px;">
+  <img src="104.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#001500,#002800);display:block;'">
+  <div class="fcov">
+    <div class="ct"><div class="snb nb-g">03</div><div><div class="cn">EREN</div><div class="cs">PREDICTION</div></div></div>
+    <div class="fcb">
+      <div>
+        <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tEren">--:--:--</div>
+        <div class="wlr"><span class="wb ww" id="wEren">W:0</span><span class="wb wl" id="lEren">L:0</span><span class="wacc" id="aEren">0%</span></div>
+      </div>
+      <div class="pbox" id="pEren" style="font-size:15px;"></div>
+      <div class="clb" id="lbEren" onclick="doLike('eren')">🤍</div>
+    </div>
+  </div>
+</div>
+
+<!-- SUKUNA + LEVI -->
+<div class="grid">
+  <div class="scard" id="card-sukuna">
+    <img src="107.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#18001a,#2a0030);display:block;'">
+    <div class="cov">
+      <div class="ct"><div class="snb nb-p">04</div><div><div class="cn">SUKUNA</div><div class="cs">PREDICTION</div></div></div>
+      <div class="cb">
+        <div>
+          <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tSukuna">--:--:--</div>
+          <div class="wlr"><span class="wb ww" id="wSukuna">W:0</span><span class="wb wl" id="lSukuna">L:0</span><span class="wacc" id="aSukuna">0%</span></div>
+          <div class="pbox" id="pSukuna"></div>
+        </div>
+        <div class="clb" id="lbSukuna" onclick="doLike('sukuna')">🤍</div>
+      </div>
+    </div>
+  </div>
+  <div class="scard" id="card-levi">
+    <img src="108.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#001a1a,#003030);display:block;'">
+    <div class="cov">
+      <div class="ct"><div class="snb nb-c">05</div><div><div class="cn">LEVI</div><div class="cs">PREDICTION</div></div></div>
+      <div class="cb">
+        <div>
+          <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tLevi">--:--:--</div>
+          <div class="wlr"><span class="wb ww" id="wLevi">W:0</span><span class="wb wl" id="lLevi">L:0</span><span class="wacc" id="aLevi">0%</span></div>
+          <div class="pbox" id="pLevi"></div>
+        </div>
+        <div class="clb" id="lbLevi" onclick="doLike('levi')">🤍</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ITACHI + NARUTO -->
+<div class="grid">
+  <div class="scard" id="card-itachi">
+    <img src="109.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#0a0800,#1a1000);display:block;'">
+    <div class="cov">
+      <div class="ct"><div class="snb nb-o">06</div><div><div class="cn">ITACHI</div><div class="cs">PREDICTION</div></div></div>
+      <div class="cb">
+        <div>
+          <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tItachi">--:--:--</div>
+          <div class="wlr"><span class="wb ww" id="wItachi">W:0</span><span class="wb wl" id="lItachi">L:0</span><span class="wacc" id="aItachi">0%</span></div>
+          <div class="pbox" id="pItachi"></div>
+        </div>
+        <div class="clb" id="lbItachi" onclick="doLike('itachi')">🤍</div>
+      </div>
+    </div>
+  </div>
+  <div class="scard" id="card-naruto">
+    <img src="110.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#1a0800,#2a1200);display:block;'">
+    <div class="cov">
+      <div class="ct"><div class="snb nb-pk">07</div><div><div class="cn">NARUTO</div><div class="cs">PREDICTION</div></div></div>
+      <div class="cb">
+        <div>
+          <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tNaruto">--:--:--</div>
+          <div class="wlr"><span class="wb ww" id="wNaruto">W:0</span><span class="wb wl" id="lNaruto">L:0</span><span class="wacc" id="aNaruto">0%</span></div>
+          <div class="pbox" id="pNaruto"></div>
+        </div>
+        <div class="clb" id="lbNaruto" onclick="doLike('naruto')">🤍</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KAKASHI + LIGHT -->
+<div class="grid">
+  <div class="scard" id="card-kakashi">
+    <img src="111.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#000e22,#001a3a);display:block;'">
+    <div class="cov">
+      <div class="ct"><div class="snb nb-b">08</div><div><div class="cn">KAKASHI</div><div class="cs">PREDICTION</div></div></div>
+      <div class="cb">
+        <div>
+          <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tKakashi">--:--:--</div>
+          <div class="wlr"><span class="wb ww" id="wKakashi">W:0</span><span class="wb wl" id="lKakashi">L:0</span><span class="wacc" id="aKakashi">0%</span></div>
+          <div class="pbox" id="pKakashi"></div>
+        </div>
+        <div class="clb" id="lbKakashi" onclick="doLike('kakashi')">🤍</div>
+      </div>
+    </div>
+  </div>
+  <div class="scard" id="card-light">
+    <img src="112.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#1a1200,#2a1e00);display:block;'">
+    <div class="cov">
+      <div class="ct"><div class="snb nb-gd">09</div><div><div class="cn">LIGHT</div><div class="cs">PREDICTION</div></div></div>
+      <div class="cb">
+        <div>
+          <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tLight">--:--:--</div>
+          <div class="wlr"><span class="wb ww" id="wLight">W:0</span><span class="wb wl" id="lLight">L:0</span><span class="wacc" id="aLight">0%</span></div>
+          <div class="pbox" id="pLight"></div>
+        </div>
+        <div class="clb" id="lbLight" onclick="doLike('light')">🤍</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- L FULL -->
+<div class="fcard" id="card-l">
+  <img src="113.png" alt="" onerror="this.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#001810,#002a1a);display:block;'">
+  <div class="fcov">
+    <div class="ct"><div class="snb nb-t">10</div><div><div class="cn">L</div><div class="cs">PREDICTION</div></div></div>
+    <div class="fcb">
+      <div>
+        <div class="csl">⏱ TIME LEFT</div><div class="csv" id="tL">--:--:--</div>
+        <div class="wlr"><span class="wb ww" id="wL">W:0</span><span class="wb wl" id="lL">L:0</span><span class="wacc" id="aL">0%</span></div>
+      </div>
+      <div class="pbox" id="pL" style="font-size:15px;"></div>
+      <div class="clb" id="lbL" onclick="doLike('l')">🤍</div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM -->
+<div class="bot">
+  <div style="display:flex;align-items:center;gap:5px;">
+    <div class="on-dot"></div>
+    <span class="on-lbl">Total Online</span>
+    <span class="on-cnt" id="onlineCount">1</span>
+  </div>
+  <div class="trust">Trust The System, Choose Your Winner!</div>
+  <span style="font-size:20px;">⚡</span>
+</div>
+</div><!-- mainApp -->
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getDatabase, ref, set, onValue, runTransaction, get, update, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+/* ══════════════════════════════════════════════
+   FIREBASE CONFIG
+══════════════════════════════════════════════ */
+const fb = initializeApp({
+  apiKey:"AIzaSyCShaI7FfDCvZ9t21RdBk7ATjk5PQUAeQI",
+  authDomain:"wingo-predictor-hub.firebaseapp.com",
+  databaseURL:"https://wingo-predictor-hub-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"wingo-predictor-hub",
+  storageBucket:"wingo-predictor-hub.firebasestorage.app",
+  messagingSenderId:"510934626240",
+  appId:"1:510934626240:web:8df9c4b4a78964f15d2225"
+});
+const db = getDatabase(fb);
+
+/* ══════════════════════════════════════════════
+   FIREBASE REFS
+══════════════════════════════════════════════ */
+const REFS = {
+  preds    : ref(db, 'pa_preds4'),       // Global predictions (auto-updated)
+  hist     : ref(db, 'pa_hist_global'),  // ✅ GLOBAL Win/Loss (sabke liye same)
+  totPreds : ref(db, 'totPreds'),        // Total prediction count
+  onlineCnt: ref(db, 'onlineCnt'),       // Online users count
+  likes    : ref(db, 'lk'),             // Likes per predictor
+};
+
+/* ══════════════════════════════════════════════
+   ONLINE PRESENCE
+══════════════════════════════════════════════ */
+const sid = 'u_' + Math.random().toString(36).substr(2, 9);
+const presRef = ref(db, 'pres/' + sid);
+set(presRef, { t: Date.now() });
+runTransaction(REFS.onlineCnt, v => (v || 0) + 1);
+const bye = () => {
+  set(presRef, null);
+  runTransaction(REFS.onlineCnt, v => Math.max(0, (v || 1) - 1));
+};
+window.addEventListener('beforeunload', bye);
+window.addEventListener('pagehide', bye);
+onValue(REFS.onlineCnt, s => {
+  const el = document.getElementById('onlineCount');
+  if (el) el.textContent = Math.max(1, s.val() || 1);
+});
+
+/* ══════════════════════════════════════════════
+   NAMES & STATE
+══════════════════════════════════════════════ */
+const NAMES = ['mikey','gojo','eren','sukuna','levi','itachi','naruto','kakashi','light','l'];
+
+// ✅ GLOBAL Win/Loss — Firebase se, device-local nahi
+let hist = {};
+NAMES.forEach(n => { hist[n] = { w: 0, l: 0 }; });
+
+// ✅ Real-time listener: jab bhi Firebase mein hist update ho, sabke devices update ho jaate hain
+onValue(REFS.hist, snap => {
+  const data = snap.val();
+  if (data) {
+    NAMES.forEach(n => {
+      if (data[n]) {
+        hist[n] = { w: data[n].w || 0, l: data[n].l || 0 };
+      }
+    });
+    NAMES.forEach(updateWL);
+  }
+  // Sync badge show
+  const badge = document.getElementById('syncBadge');
+  if (badge) { badge.textContent = '🔥 Firebase Synced'; badge.className = 'sync-badge sync-ok'; }
+});
+
+function saveHistToFirebase() {
+  // ✅ Atomically update each predictor's W/L in Firebase
+  const updates = {};
+  NAMES.forEach(n => {
+    updates['pa_hist_global/' + n] = hist[n];
+  });
+  update(ref(db), updates);
+}
+
+/* ══════════════════════════════════════════════
+   TOTAL COUNT
+══════════════════════════════════════════════ */
+onValue(REFS.totPreds, s => {
+  const el = document.getElementById('totalPredCount');
+  if (el) el.textContent = (s.val() || 0).toLocaleString();
+});
+
+/* ══════════════════════════════════════════════
+   LIKES — Global Firebase sync
+══════════════════════════════════════════════ */
+// myLikes = per-device track (taaki ek user baar hi like kare)
+const LIKE_KEY = 'pa_lk5';
+let myLikes = JSON.parse(localStorage.getItem(LIKE_KEY) || '{}');
+NAMES.forEach(n => {
+  if (myLikes[n]) {
+    const b = document.getElementById('lb' + uc(n));
+    if (b) { b.textContent = '❤️'; b.classList.add('liked'); }
+  }
+});
+
+window.doLike = function(n) {
+  if (myLikes[n]) return;
+  myLikes[n] = true;
+  localStorage.setItem(LIKE_KEY, JSON.stringify(myLikes));
+  runTransaction(ref(db, 'lk/' + n), v => (v || 0) + 1);
+  const b = document.getElementById('lb' + uc(n));
+  if (b) { b.textContent = '❤️'; b.classList.add('liked'); }
+};
+
+/* ══════════════════════════════════════════════
+   GLOBAL PREDICTIONS LISTENER
+   ✅ Website on ho ya off — predictions Firebase mein live rehte hain
+   Jab koi bhi open kare, turant latest predictions milenge
+══════════════════════════════════════════════ */
+let firebasePreds = {};  // Latest predictions from Firebase
+let firebasePeriod = ''; // Period for which Firebase has predictions
+
+// ✅ Real-time listener: kisi bhi device pe change hote hi sabke devices update
+onValue(REFS.preds, snap => {
+  const data = snap.val();
+  if (!data) return;
+
+  firebasePeriod = data.period || '';
+  NAMES.forEach(n => {
+    firebasePreds[n] = data[n] || null;
+  });
+
+  // Update round display from Firebase too (for offline users)
+  if (firebasePeriod) {
+    const roundEl = document.getElementById('liveRound');
+    if (roundEl && (!nextPeriod || firebasePeriod === nextPeriod)) {
+      roundEl.textContent = firebasePeriod;
+    }
+  }
+
+  // If local data not ready, use Firebase predictions directly
+  if (!dataReady) {
+    activePreds = { ...firebasePreds };
+    dataReady = true;
+  }
+});
+
+/* ══════════════════════════════════════════════
+   API PARSING
+   New API: draw.ar-lottery01.com
+   Response shape:
+   {
+     "code": 0,
+     "data": {
+       "list": [
+         {
+           "issueNumber": "20260518100010305",
+           "number": "3",          ← winning number 0-9
+           "openTime": "...",
+           "remainTime": 42,       ← seconds left
+           ...
+         },
+         ...
+       ],
+       "total": 100
+     }
+   }
+   issueNumber = period number
+   number      = result digit (0-4 = SMALL, 5-9 = BIG)
+   remainTime  = seconds until current round ends
+══════════════════════════════════════════════ */
+function extractList(json) {
+  // Shape 1 (ar-lottery01 primary): {code:0, data:{list:[...]}}
+  if (json?.data?.list && Array.isArray(json.data.list) && json.data.list.length > 0)
+    return json.data.list;
+  // Shape 2: {data:[...]}
+  if (Array.isArray(json?.data) && json.data.length > 0) return json.data;
+  // Shape 3: {list:[...]}
+  if (Array.isArray(json?.list) && json.list.length > 0) return json.list;
+  // Shape 4: {result:{list:[...]}}
+  if (json?.result?.list && Array.isArray(json.result.list) && json.result.list.length > 0)
+    return json.result.list;
+  // Shape 5: root array
+  if (Array.isArray(json) && json.length > 0) return json;
+  // Shape 6: deep search — find first array with objects
+  for (const k of Object.keys(json || {})) {
+    if (Array.isArray(json[k]) && json[k].length > 0) return json[k];
+    if (json[k] && typeof json[k] === 'object') {
+      for (const k2 of Object.keys(json[k])) {
+        if (Array.isArray(json[k][k2]) && json[k][k2].length > 0) return json[k][k2];
+      }
+    }
+  }
+  return null;
+}
+
+function getPeriodStr(item) {
+  // ar-lottery01 uses "issueNumber"; fallback to other common names
+  const raw = item.issueNumber ?? item.issue ?? item.periodId ?? item.period
+            ?? item.id ?? item.gameId ?? item.roundId ?? item.roundNumber ?? '';
+  return String(raw).trim();
+}
+
+function getNumber(item) {
+  // ar-lottery01 uses "number" field (single digit string "0"-"9")
+  const raw = item.number ?? item.openCode ?? item.num ?? item.result
+            ?? item.winNumber ?? item.openNumber ?? item.drawNumber ?? '';
+  // Handle comma-separated like "3,red,small" → take first part
+  const first = String(raw).split(',')[0].trim();
+  const n = parseInt(first.replace(/[^0-9]/g, ''));
+  return isNaN(n) ? -1 : n;
+}
+
+function getSize(item) {
+  // 1. Check explicit bigSmall / size field first
+  const c = String(item.bigSmall ?? item.size ?? item.colour ?? item.color ?? item.type ?? '').toLowerCase();
+  if (c === 'big'   || c === 'b') return 'BIG';
+  if (c === 'small' || c === 's') return 'SMALL';
+  if (c.includes('big'))   return 'BIG';
+  if (c.includes('small')) return 'SMALL';
+  // 2. Derive from number: 0-4 = SMALL, 5-9 = BIG  (ar-lottery01 standard)
+  const n = getNumber(item);
+  if (n >= 0 && n <= 4) return 'SMALL';
+  if (n >= 5 && n <= 9) return 'BIG';
+  return null;
+}
+
+function getRemainSecs(item) {
+  // ar-lottery01 sends remainTime in seconds
+  const raw = item.remainTime ?? item.countDown ?? item.countdown
+            ?? item.timeLeft ?? item.remainSeconds ?? item.left ?? null;
+  if (raw == null) return null;
+  const v = parseFloat(String(raw));
+  return isNaN(v) ? null : v;
+}
+
+function nextPeriodNum(periodStr) {
+  if (!periodStr) return '';
+  try { return String(BigInt(periodStr) + 1n); }
+  catch (e) {
+    const n = parseInt(periodStr.slice(-4));
+    return periodStr.slice(0, -4) + String((n + 1)).padStart(4, '0');
+  }
+}
+
+/* ══════════════════════════════════════════════
+   FETCH API — every 5 seconds
+   ✅ Ek device fetch kare, Firebase update ho
+   ✅ Sabke devices real-time mein same dikhenge
+   API: https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json
+══════════════════════════════════════════════ */
+// Primary API — new ar-lottery01 source
+const API_URL = 'https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json';
+// Common params for this API (pageNo + pageSize)
+const API_PARAMS = '?pageNo=1&pageSize=100';
+
+let fetchBusy = false;
+let results = [];
+let nextPeriod = '';
+let roundEndMs = 0;
+let activePreds = {};
+let savedPreds = {};
+let lastPeriod = '';
+let dataReady = false;
+
+async function fetchAPI() {
+  if (fetchBusy) return;
+  fetchBusy = true;
+  try {
+    // Try with params first, then without if needed
+    let r = await fetch(API_URL + API_PARAMS, {
+      cache: 'no-cache',
+      signal: AbortSignal.timeout(8000),
+      headers: { 'Accept': 'application/json, text/plain, */*' }
+    });
+    // Some servers need no params
+    if (!r.ok) {
+      r = await fetch(API_URL, {
+        cache: 'no-cache',
+        signal: AbortSignal.timeout(8000),
+        headers: { 'Accept': 'application/json, text/plain, */*' }
+      });
+    }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const json = await r.json();
+
+    const list = extractList(json);
+    if (!list || list.length === 0) {
+      showApiBar(false, '⚠ API: empty data');
+      fetchBusy = false; return;
+    }
+
+    // Sort newest first
+    list.sort((a, b) => {
+      const pa = getPeriodStr(a), pb = getPeriodStr(b);
+      try { const diff = BigInt(pb) - BigInt(pa); return diff > 0n ? 1 : diff < 0n ? -1 : 0; }
+      catch (e) { return pb.localeCompare(pa); }
+    });
+
+    const newest = list[0];
+    const newPeriod = getPeriodStr(newest);
+
+    // ── Win/Loss check ─────────────────────────────────────
+    if (lastPeriod && newPeriod !== lastPeriod && Object.keys(savedPreds).length > 0) {
+      const targetP = nextPeriod.replace('#', '');
+      const target = list.find(x => getPeriodStr(x) === targetP) || list[1];
+      if (target) {
+        const actual = getSize(target);
+        if (actual) {
+          let hadPred = false;
+          NAMES.forEach(n => {
+            const p = savedPreds[n];
+            if (p === 'BIG' || p === 'SMALL') {
+              hadPred = true;
+              if (p === actual) hist[n].w++; else hist[n].l++;
+            }
+          });
+          if (hadPred) {
+            // ✅ Save to Firebase — sabke devices pe same W/L dikhega
+            saveHistToFirebase();
+            NAMES.forEach(updateWL);
+            runTransaction(REFS.totPreds, v => (v || 0) + 1);
+          }
+        }
+      }
+    }
+
+    // ── Save state ─────────────────────────────────────────
+    savedPreds = { ...activePreds };
+    lastPeriod = newPeriod;
+    results = list;
+    dataReady = true;
+
+    // ── Next period display ─────────────────────────────────
+    const nxt = nextPeriodNum(newPeriod);
+    nextPeriod = '#' + nxt;
+    document.getElementById('liveRound').textContent = nextPeriod;
+
+    // ── Round end time ──────────────────────────────────────
+    // ar-lottery01: use remainTime (seconds) from newest record
+    const remainSecs = getRemainSecs(newest);
+    const et = newest.endTime ?? newest.closeTime ?? newest.drawTime
+             ?? newest.openTime ?? null;
+
+    if (remainSecs != null && remainSecs > 0) {
+      // Most accurate: remainTime directly tells seconds left
+      roundEndMs = Date.now() + remainSecs * 1000;
+    } else if (et) {
+      const parsed = new Date(et).getTime();
+      roundEndMs = !isNaN(parsed) && parsed > Date.now() ? parsed : Date.now() + 60000;
+    } else {
+      // WinGo 1-min rounds fallback
+      roundEndMs = Date.now() + 60000;
+    }
+
+    // ── Compute predictions ─────────────────────────────────
+    computeAllPreds();
+    showApiBar(true, '✓ Live: ' + newPeriod.slice(-4));
+
+    // ✅ Save ALL predictions to Firebase — website off hone ke baad bhi latest preds rahenge
+    const payload = {
+      period: nextPeriod,
+      ts: Date.now(),
+      roundEndMs: roundEndMs
+    };
+    NAMES.forEach(n => payload[n] = activePreds[n] ?? null);
+    set(REFS.preds, payload);
+
+    // ✅ Also save round info globally
+    set(ref(db, 'pa_round'), {
+      nextPeriod: nextPeriod,
+      roundEndMs: roundEndMs,
+      ts: Date.now()
+    });
+
+  } catch (err) {
+    showApiBar(false, '⚠ ' + err.message.slice(0, 30));
+    console.warn('fetchAPI:', err);
+  }
+  fetchBusy = false;
+}
+
+/* ══════════════════════════════════════════════
+   ROUND INFO FROM FIREBASE (for offline / slow devices)
+   ✅ Agar API fail ho toh bhi Firebase se round info milega
+══════════════════════════════════════════════ */
+onValue(ref(db, 'pa_round'), snap => {
+  const data = snap.val();
+  if (!data) return;
+  // Only use Firebase round data if local data is stale or unavailable
+  if (!dataReady && data.nextPeriod) {
+    nextPeriod = data.nextPeriod;
+    document.getElementById('liveRound').textContent = nextPeriod;
+  }
+  // Sync roundEndMs from Firebase if local is expired
+  if (data.roundEndMs && data.roundEndMs > Date.now() && roundEndMs < Date.now()) {
+    roundEndMs = data.roundEndMs;
+  }
+});
+
+/* ══════════════════════════════════════════════
+   SIZES ARRAY
+══════════════════════════════════════════════ */
+function sizes() {
+  return results.map(getSize).filter(Boolean);
+}
+
+/* ══════════════════════════════════════════════
+   PREDICTOR LOGICS
+══════════════════════════════════════════════ */
+
+// ── 01 MIKEY ──
+function logicMikey(s) {
+  if (s.length < 3) return rand();
+  let st = 1; for (let i = 1; i < s.length && s[i] === s[0]; i++) st++;
+  if (st >= 4) return opp(s[0]);
+  if (st === 3) { const b15 = bgRatio(s, 15); return b15 > 0.55 ? 'SMALL' : 'BIG'; }
+  if (s.length >= 4 && s[0] !== s[1] && s[1] !== s[2] && s[2] !== s[3]) return opp(s[0]);
+  if (s[0] === s[1]) return opp(s[0]);
+  return opp(s[0]);
+}
+
+// ── 02 GOJO ──
+function logicGojo(s) {
+  if (s.length < 6) return s.length ? s[0] : 'BIG';
+  let alt = true; for (let i = 1; i < Math.min(s.length, 8); i++) if (s[i] === s[i - 1]) { alt = false; break; }
+  if (alt) return opp(s[0]);
+  const p5 = s.slice(0, 5).join('');
+  for (let i = 5; i < Math.min(s.length - 5, 90); i++) {
+    if (s.slice(i, i + 5).join('') === p5) return s[i - 1];
+  }
+  const p3 = s.slice(0, 3).join('');
+  let votes = { 'BIG': 0, 'SMALL': 0 };
+  for (let i = 3; i < Math.min(s.length - 3, 90); i++) {
+    if (s.slice(i, i + 3).join('') === p3) votes[s[i - 1]] = (votes[s[i - 1]] || 0) + 1;
+  }
+  if (votes.BIG > votes.SMALL) return 'BIG';
+  if (votes.SMALL > votes.BIG) return 'SMALL';
+  const r = bgRatio(s, 20);
+  if (r < 0.38) return 'BIG'; if (r > 0.62) return 'SMALL';
+  return opp(s[0]);
+}
+
+// ── 03 EREN ──
+function logicEren(s) {
+  if (s.length < 8) return 'BIG';
+  const r25 = bgRatio(s, 25), r50 = bgRatio(s.slice(25), 25);
+  if (Math.abs(r25 - r50) < 0.1) {
+    let st = 1; for (let i = 1; i < s.length && s[i] === s[0]; i++) st++;
+    if (st >= 3) return opp(s[0]);
+    let sw = 0; for (let i = 1; i < Math.min(s.length, 12); i++) if (s[i] !== s[i - 1]) sw++;
+    return sw % 2 === 0 ? 'SMALL' : 'BIG';
+  }
+  if (r25 > 0.65) return 'SMALL'; if (r25 < 0.35) return 'BIG';
+  if (s.length >= 5 && s[3] === s[4] && s[0] !== s[3]) return s[3];
+  return r25 > 0.5 ? 'SMALL' : 'BIG';
+}
+
+// ── 04 SUKUNA ──
+function logicSukuna(s) {
+  if (s.length < 4) return 'SMALL';
+  const l3 = s.slice(0, 3);
+  let st = 1; for (let i = 1; i < s.length && s[i] === s[0]; i++) st++;
+  if (st >= 3) return s[0];
+  const bg3 = l3.filter(x => x === 'BIG').length;
+  if (bg3 === 2 && s[0] === 'SMALL') return 'BIG';
+  if (bg3 === 1 && s[0] === 'BIG') return 'SMALL';
+  if (s.length >= 20) { const r = bgRatio(s, 20); if (r > 0.65) return 'SMALL'; if (r < 0.35) return 'BIG'; }
+  return opp(s[0]);
+}
+
+// ── 05 LEVI ──
+function logicLevi(s) {
+  if (s.length < 12) return null;
+  const bg8 = s.slice(0, 8).filter(x => x === 'BIG').length;
+  const conf = Math.abs(bg8 - 4) / 4;
+  if (conf < 0.40) return null;
+  if (s.length >= 16) {
+    const bg16 = s.slice(0, 16).filter(x => x === 'BIG').length;
+    const conf2 = Math.abs(bg16 - 8) / 8;
+    if (conf2 < 0.30) return null;
+    return bg16 > 8 ? 'SMALL' : 'BIG';
+  }
+  return bg8 > 4 ? 'SMALL' : 'BIG';
+}
+
+// ── 06 ITACHI ──
+function logicItachi(s) {
+  if (s.length < 5) return 'SMALL';
+  const l5 = s.slice(0, 5), bg5 = l5.filter(x => x === 'BIG').length;
+  if (bg5 >= 4 && s[0] === 'BIG') return 'SMALL';
+  if (bg5 <= 1 && s[0] === 'SMALL') return 'BIG';
+  if (s[0] === s[1] && s[2] !== s[0] && s[3] !== s[0]) return s[2];
+  if (s.length >= 7) { const bg7 = s.slice(0, 7).filter(x => x === 'BIG').length; if (bg7 >= 5) return 'SMALL'; if (bg7 <= 2) return 'BIG'; }
+  return bg5 >= 3 ? 'SMALL' : 'BIG';
+}
+
+// ── 07 NARUTO ──
+function logicNaruto(s) {
+  if (s.length < 3) return 'BIG';
+  const bg3 = s.slice(0, 3).filter(x => x === 'BIG').length;
+  if (bg3 === 3) return 'BIG'; if (bg3 === 0) return 'SMALL';
+  if (s.length >= 6) {
+    const bg6 = s.slice(0, 6).filter(x => x === 'BIG').length;
+    if (bg6 >= 5) return 'BIG'; if (bg6 <= 1) return 'SMALL';
+    if (s[0] === s[1]) return s[0];
+  }
+  return s[0];
+}
+
+// ── 08 KAKASHI ──
+function logicKakashi(s) {
+  if (s.length < 15) return 'BIG';
+  const c5 = s.slice(0, 5).join('');
+  for (let i = 5; i < Math.min(s.length - 5, 90); i++) {
+    if (s.slice(i, i + 5).join('') === c5) return s[i - 1];
+  }
+  const c4 = s.slice(0, 4).join(''); let v = { 'BIG': 0, 'SMALL': 0 };
+  for (let i = 4; i < Math.min(s.length - 4, 90); i++) {
+    if (s.slice(i, i + 4).join('') === c4) v[s[i - 1]] = (v[s[i - 1]] || 0) + 1;
+  }
+  if (v.BIG > v.SMALL) return 'BIG'; if (v.SMALL > v.BIG) return 'SMALL';
+  const r = bgRatio(s, 30);
+  return r > 0.5 ? 'SMALL' : 'BIG';
+}
+
+// ── 09 LIGHT ──
+function logicLight(s) {
+  if (s.length < 10) return 'BIG';
+  const r10 = s.slice(0, 10), bg10 = r10.filter(x => x === 'BIG').length;
+  if (bg10 > 8) return 'SMALL'; if (bg10 < 2) return 'BIG';
+  let sw = 0; for (let i = 1; i < r10.length; i++) if (r10[i] !== r10[i - 1]) sw++;
+  if (sw > 7) return r10[0];
+  if (sw < 3) { const r = bgRatio(s, 20); if (r > 0.6) return 'SMALL'; if (r < 0.4) return 'BIG'; }
+  let BB = 0, BS = 0, SB = 0, SS = 0;
+  for (let i = 0; i < s.length - 1; i++) {
+    if (s[i] === 'BIG' && s[i + 1] === 'BIG') BB++;
+    else if (s[i] === 'BIG' && s[i + 1] === 'SMALL') BS++;
+    else if (s[i] === 'SMALL' && s[i + 1] === 'BIG') SB++;
+    else SS++;
+  }
+  if (s[0] === 'BIG') return BS > BB ? 'SMALL' : 'BIG';
+  return SB > SS ? 'BIG' : 'SMALL';
+}
+
+// ── 10 L ──
+function logicL(s) {
+  if (s.length < 20) return null;
+  let st = 1; for (let i = 1; i < s.length && s[i] === s[0]; i++) st++;
+  if (st >= 5) return opp(s[0]);
+  let zig = true; for (let i = 1; i < Math.min(s.length, 10); i++) if (s[i] === s[i - 1]) { zig = false; break; }
+  if (zig) return opp(s[0]);
+  if (s.length >= 7 && s[0] === s[1] && s[1] === s[2] && s[3] !== s[0] && s[4] === s[5] && s[5] === s[6]) return opp(s[0]);
+  if (s.length >= 50) { const r = bgRatio(s, 50); if (r > 0.72 || r < 0.28) return r > 0.5 ? 'SMALL' : 'BIG'; }
+  return null;
+}
+
+function opp(x) { return x === 'BIG' ? 'SMALL' : 'BIG'; }
+function rand() { return Math.random() > 0.5 ? 'BIG' : 'SMALL'; }
+function bgRatio(arr, n) { const a = arr.slice(0, Math.min(n, arr.length)); return a.filter(x => x === 'BIG').length / Math.max(1, a.length); }
+
+/* ══════════════════════════════════════════════
+   SCHEDULE
+══════════════════════════════════════════════ */
+const SCHED = { mikey:10, gojo:11, eren:13, sukuna:14, levi:15, itachi:16, naruto:17, kakashi:18, light:19, l:20 };
+
+function isActive(n) {
+  const h = SCHED[n]; if (h === undefined) return false;
+  const now = new Date();
+  return now.getHours() === h && now.getMinutes() < 30;
+}
+function secsUntil(n) {
+  const h = SCHED[n]; if (h === undefined) return 99 * 3600;
+  const now = new Date(), tgt = new Date(now);
+  tgt.setHours(h, 0, 0, 0);
+  if (tgt <= now) tgt.setDate(tgt.getDate() + 1);
+  return Math.max(0, Math.floor((tgt - now) / 1000));
+}
+function secsUntilEnd() {
+  return Math.max(0, Math.floor((roundEndMs - Date.now()) / 1000));
+}
+
+const LOGICS = { mikey:logicMikey, gojo:logicGojo, eren:logicEren, sukuna:logicSukuna, levi:logicLevi, itachi:logicItachi, naruto:logicNaruto, kakashi:logicKakashi, light:logicLight, l:logicL };
+
+function computeAllPreds() {
+  const s = sizes();
+  NAMES.forEach(n => {
+    activePreds[n] = (isActive(n) && s.length >= 5) ? (LOGICS[n](s) ?? null) : null;
+  });
+}
+
+/* ══════════════════════════════════════════════
+   RENDER PREDICTION
+══════════════════════════════════════════════ */
+function renderPred(elId, pred, big) {
+  const el = document.getElementById(elId); if (!el) return;
+  if (pred === 'BIG') {
+    el.textContent = 'SMALL';
+    el.className = big ? 'psml' : 'pbox psml';
+    if (big) el.style.fontSize = '17px';
+  } else if (pred === 'SMALL') {
+    el.textContent = 'BIG';
+    el.className = big ? 'pbig' : 'pbox pbig';
+    if (big) el.style.fontSize = '17px';
+  } else if (pred === null) {
+    el.textContent = 'NO ENTRY';
+    el.className = big ? 'pnone' : 'pbox pnone';
+    if (big) el.style.fontSize = '';
+  } else {
+    el.textContent = '';
+    el.className = big ? 'pwait' : 'pbox pwait';
+    if (big) el.style.fontSize = '';
+  }
+}
+
+/* ══════════════════════════════════════════════
+   UPDATE WIN/LOSS UI
+══════════════════════════════════════════════ */
+function updateWL(n) {
+  const h = hist[n], tot = h.w + h.l, acc = tot ? Math.round(h.w / tot * 100) : 0, C = uc(n);
+  const w = document.getElementById('w' + C), l = document.getElementById('l' + C), a = document.getElementById('a' + C);
+  if (w) w.textContent = 'W:' + h.w;
+  if (l) l.textContent = 'L:' + h.l;
+  if (a) a.textContent = acc + '%';
+}
+NAMES.forEach(updateWL);
+
+/* ══════════════════════════════════════════════
+   FEATURED BOX
+══════════════════════════════════════════════ */
+const META = {
+  mikey:  { num:'01', name:'MIKEY',   img:'105.png', nb:'nb-r',  col:'#f33' },
+  gojo:   { num:'02', name:'GOJO',    img:'106.png', nb:'nb-y',  col:'#f90' },
+  eren:   { num:'03', name:'EREN',    img:'104.png', nb:'nb-g',  col:'#0f0' },
+  sukuna: { num:'04', name:'SUKUNA',  img:'107.png', nb:'nb-p',  col:'#a020f0' },
+  levi:   { num:'05', name:'LEVI',    img:'108.png', nb:'nb-c',  col:'#0ef' },
+  itachi: { num:'06', name:'ITACHI',  img:'109.png', nb:'nb-o',  col:'#ff6600' },
+  naruto: { num:'07', name:'NARUTO',  img:'110.png', nb:'nb-pk', col:'#ff3399' },
+  kakashi:{ num:'08', name:'KAKASHI', img:'111.png', nb:'nb-b',  col:'#0055ff' },
+  light:  { num:'09', name:'LIGHT',   img:'112.png', nb:'nb-gd', col:'#ffd700' },
+  l:      { num:'10', name:'L',       img:'113.png', nb:'nb-t',  col:'#00ccaa' },
+};
+const ORDER = ['mikey','gojo','eren','sukuna','levi','itachi','naruto','kakashi','light','l'];
+
+function getFeatured() {
+  for (const n of ORDER) if (isActive(n)) return n;
+  let best = 'eren', min = Infinity;
+  for (const n of ORDER) { const s = secsUntil(n); if (s < min) { min = s; best = n; } }
+  return best;
+}
+
+let lastFeat = '';
+function updateFeatured() {
+  const n = getFeatured(), m = META[n], live = isActive(n);
+  document.getElementById('featCard').style.borderColor = m.col;
+  if (lastFeat !== n) {
+    lastFeat = n;
+    const img = document.getElementById('featImg');
+    img.src = m.img;
+    img.onerror = function() { this.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#001500,#002800);display:block;'; };
+  }
+  const nb = document.getElementById('featNB');
+  nb.className = 'nb ' + m.nb; nb.textContent = m.num;
+  document.getElementById('featName').textContent = m.name;
+
+  const badge = document.getElementById('featBadge');
+  badge.className = live ? 'live-b' : 'wait-b';
+  badge.textContent = live ? 'LIVE' : 'NEXT';
+
+  document.getElementById('featPeriod').textContent = nextPeriod || firebasePeriod || '---';
+
+  const sec = live ? secsUntilEnd() : secsUntil(n);
+  document.getElementById('featTime').textContent = hms(sec);
+
+  // ✅ Show prediction: local first, then Firebase fallback
+  const pred = dataReady ? (activePreds[n] ?? firebasePreds[n] ?? null) : (firebasePreds[n] ?? undefined);
+  const ep = document.getElementById('featPred');
+  if (live) {
+    renderPred('featPred', pred, true);
+  } else {
+    ep.textContent = live ? 'ANALYZING...' : 'WAIT...';
+    ep.className = 'pwait'; ep.style.fontSize = '';
+  }
+
+  const lb = document.getElementById('featLike');
+  lb.onclick = () => doLike(n);
+  if (myLikes[n]) { lb.textContent = '❤️'; lb.classList.add('liked'); }
+  else { lb.textContent = '🤍'; lb.classList.remove('liked'); }
+
+  ORDER.forEach(x => {
+    const c = document.getElementById('card-' + x);
+    if (!c) return;
+    if (x === n && live) c.classList.add('live-active');
+    else c.classList.remove('live-active');
+  });
+}
+
+/* ══════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════ */
+function uc(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function hms(sec) {
+  if (sec <= 0) return '00:00:00';
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return [h, m, s].map(x => String(x).padStart(2, '0')).join(':');
+}
+function showApiBar(ok, msg) {
+  const el = document.getElementById('apiBar');
+  el.textContent = msg; el.className = 'api-status ' + (ok ? 'api-ok' : 'api-err');
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 2500);
+}
+
+/* ══════════════════════════════════════════════
+   TICK (every second)
+══════════════════════════════════════════════ */
+const CMAP = { mikey:'Mikey', gojo:'Gojo', eren:'Eren', sukuna:'Sukuna', levi:'Levi', itachi:'Itachi', naruto:'Naruto', kakashi:'Kakashi', light:'Light', l:'L' };
+
+function tick() {
+  const now = new Date();
+  document.getElementById('liveClock').textContent =
+    [now.getHours(), now.getMinutes(), now.getSeconds()].map(x => String(x).padStart(2, '0')).join(':');
+
+  document.getElementById('roundCD').textContent = hms(secsUntilEnd());
+
+  updateFeatured();
+
+  Object.entries(CMAP).forEach(([n, C]) => {
+    const tEl = document.getElementById('t' + C);
+    if (tEl) tEl.textContent = isActive(n) ? hms(secsUntilEnd()) : hms(secsUntil(n));
+
+    // ✅ Show from local activePreds OR Firebase fallback
+    const pred = dataReady ? (activePreds[n] ?? firebasePreds[n] ?? null) : (firebasePreds[n] ?? undefined);
+    renderPred('p' + C, pred, false);
+    updateWL(n);
+  });
+}
+
+/* ══════════════════════════════════════════════
+   POPUP TIMERS
+══════════════════════════════════════════════ */
+let sessStart = Date.now(), _c1 = false, _c2 = false, _fb = false, _key = false;
+function popCheck() {
+  const e = Math.floor((Date.now() - sessStart) / 1000);
+  if (!_c1 && e >= 300)  { _c1 = true; document.getElementById('ch1Pop').classList.remove('hidden'); }
+  if (!_c2 && e >= 600)  { _c2 = true; document.getElementById('ch2Pop').classList.remove('hidden'); }
+  if (!_fb && e >= 1200) { _fb = true; document.getElementById('fbPop').classList.remove('hidden'); }
+  if (!_key && e >= 1800 && localStorage.getItem('pa_key_ok') !== '1') {
+    _key = true; document.getElementById('keyPop').classList.remove('hidden');
+  }
+}
+
+/* ══════════════════════════════════════════════
+   GLOBALS
+══════════════════════════════════════════════ */
+window.closeIntro = () => {
+  document.getElementById('introPopup').classList.add('hidden');
+  document.getElementById('mainApp').style.display = 'block';
+  sessStart = Date.now();
+  fetchAPI();
+};
+window.hidePopup = (id) => document.getElementById(id).classList.add('hidden');
+window.checkKey = () => {
+  const v = document.getElementById('keyInput').value.trim();
+  const err = document.getElementById('keyErr');
+  if (v === 'Mikey123456') {
+    localStorage.setItem('pa_key_ok', '1');
+    document.getElementById('keyPop').classList.add('hidden');
+    err.style.display = 'none';
+  } else err.style.display = 'block';
+};
+
+/* ══════════════════════════════════════════════
+   START
+══════════════════════════════════════════════ */
+fetchAPI();                     // Instant fetch
+setInterval(fetchAPI, 5000);    // Re-fetch every 5 sec
+setInterval(tick, 1000);        // UI update every 1 sec
+setInterval(popCheck, 3000);    // Popup check
+tick();
+</script>
+</body>
+</html>
